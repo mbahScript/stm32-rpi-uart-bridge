@@ -18,37 +18,37 @@ This folder contains the Raspberry Pi side of the UART bridge.
 ## Example
 ```bash
 python3 uart_control.py
+```
 
-
----
-
-# 4️⃣ `docs/uart_protocol.md` (THIS IS GOLD)
-
-This makes your project look **research-grade**.
-
-```md
-# UART Protocol Specification
+## UART Protocol Specification
 
 ## Framing
+```md
 - STX: 0x02
 - ETX: 0x03
+```
 
 ## UART Message Framing:
-
+```md
 +------+-----+------+-----+------+
 | STX  | '|' | CMD  | '|' | DATA | ... | ETX |
 |0x02  |     | PING |     |      |     |0x03 |
 +------+-----+------+-----+------+
+```
 
 ## Legend:
+```md
 - STX (0x02) : Start of Text – marks the beginning of a message
 - '|'         : Separator – makes the message readable
 - CMD         : Command being sent (e.g., PING, STATUS)
 - DATA        : Optional data or parameters
 - ETX (0x03)  : End of Text – marks the end of the message
+```
 
 ## Format
+```md
 <STX>|CMD|DATA|<ETX>
+```
 
 ## Commands
 | Command | Description |
