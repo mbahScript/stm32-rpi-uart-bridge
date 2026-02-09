@@ -1,0 +1,11 @@
+Debug/
+Release/
+.build/
+.settings/
+.metadata/
+*.o
+*.elf
+*.map
+*.launch
+*.log
+*.lst
