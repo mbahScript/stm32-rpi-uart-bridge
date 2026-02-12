@@ -82,7 +82,6 @@ Where:
 | ARR  | Arrival update |
 | DL   | Delay event |
 
----
 
 ##  Commands (Pi → STM32)
 
@@ -92,6 +91,10 @@ Where:
 | STATUS | STATUS (node info) |
 | SETROUTE=12A | ACK ROUTE_SET |
 | SETETA=7 | ACK ETA_SET |
+
+
+## Architecture Diagram
+![System Diagram](docs/architecture_diagram.png)
 
 ---
 
@@ -118,7 +121,7 @@ UART Configuration:
 ---
 
 ##  Running the Host (Raspberry Pi)
-
+*NB: [host.py] is paser.py and send_command.py combined.*
 ```bash
 cd raspberry_pi
 python3 -m venv .venv
