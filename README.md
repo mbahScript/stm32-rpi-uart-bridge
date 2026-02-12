@@ -1,94 +1,168 @@
-# Bidirectional UART Communication Between STM32F767 and Raspberry Pi 5
-![Embedded Systems](https://img.shields.io/badge/Embedded%20Systems-00599C?style=for-the-badge)
-![STM32](https://img.shields.io/badge/STM32-03234B?style=for-the-badge&logo=stmicroelectronics)
-![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-C51A4A?style=for-the-badge&logo=raspberrypi)
-![UART](https://img.shields.io/badge/UART-000000?style=for-the-badge)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![Microcontrollers](https://img.shields.io/badge/Microcontrollers-4CAF50?style=for-the-badge)
-![Bare Metal](https://img.shields.io/badge/Bare--Metal-FF6F00?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-v0.1.0-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/status-active-success?style=for-the-badge)
+# STM32 ↔ Raspberry Pi 5 UART Transport Protocol
 
+![Release](https://img.shields.io/github/v/release/mbahScript/stm32-rpi-uart-bridge?style=for-the-badge)
+![License](https://img.shields.io/github/license/mbahScript/stm32-rpi-uart-bridge?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/mbahScript/stm32-rpi-uart-bridge?style=for-the-badge)
+![Repo Size](https://img.shields.io/github/repo-size/mbahScript/stm32-rpi-uart-bridge?style=for-the-badge)
 
-## 1. Project Overview
-This project implements a robust, bidirectional UART communication interface between an STM32F767 microcontroller and a Raspberry Pi 5. It demonstrates interrupt-driven serial communication using framed command messages, suitable for professional embedded systems portfolios.
+![STM32](https://img.shields.io/badge/MCU-STM32F767-03234B?style=for-the-badge&logo=stmicroelectronics)
+![Raspberry Pi](https://img.shields.io/badge/SBC-Raspberry%20Pi%205-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Firmware](https://img.shields.io/badge/Firmware-C-00599C?style=for-the-badge&logo=c&logoColor=white)
+![Host](https://img.shields.io/badge/Host-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Protocol](https://img.shields.io/badge/Protocol-UART-000000?style=for-the-badge)
 
+---
 
-## 2. Motivation
-The project showcases industry-relevant embedded communication design, focusing on reliability, non-blocking firmware architecture, and microcontroller–Linux system integration.
+##  Overview
 
+This project implements a **structured, bidirectional UART transport protocol** between:
 
-## 3. System [Architecture](docs/architecture.md)
-The STM32F767 handles real-time UART processing using interrupts, while the Raspberry Pi 5 operates as a high-level host capable of issuing commands and receiving structured responses.
+- **STM32F767 (Nucleo-144)** – Real-time embedded node
+- **Raspberry Pi 5** – Host controller
 
+It goes beyond basic UART by implementing:
 
-## 4. Hardware
-- STM32 Nucleo-144 [STM32F767](stm32/README.md)
-- Raspberry [Pi 5](raspberry-pi/README.md)
-- UART [wiring](docs/wiring.md) (TX ↔ RX, RX ↔ TX, common GND)
+- ✅ STX/ETX framed packets  
+- ✅ XOR checksum validation  
+- ✅ Typed messages (HB / ARR / DL / CMD / ACK / STATUS / ERR)  
+- ✅ Bidirectional command-response handling  
+- ✅ Interactive host controller with auto-reconnect  
 
+This repository serves as the **communication foundation** for a future smart transport (TfL-style) simulation system.
 
-## 5. Software Stack
-- STM32CubeIDE (HAL-based firmware)
-- Raspberry Pi OS (64-bit)
-- Python (pySerial)
+---
 
+##  Why This Project Matters
 
-## 6. UART Protocol Design
-UART messages are framed using STX (0x02) and ETX (0x03) markers:
+In real embedded systems, UART communication must handle:
+
+- Framing & partial data
+- Corruption detection
+- Message typing
+- State updates
+- Host–node coordination
+- Fault tolerance
+
+This project demonstrates those principles using real hardware.
+
+---
+
+## 🔄 Protocol Format
+
+All packets follow:
+
 ```md
-<STX>|CMD|DATA|<ETX>
+<STX>TYPE|NODE|DATA|CHK<ETX>
 ```
 
-### Commands
-| Command | Description |
+
+Where:
+
+- **STX** = `0x02`
+- **ETX** = `0x03`
+- **CHK** = XOR of ASCII bytes of `TYPE|NODE|DATA`
+
+### Example
+
+
+```md
+<STX>HB|BUS01|OK|4B<ETX>
+<STX>CMD|HOST|PING|5A<ETX>
+<STX>ACK|BUS01|PONG|1A<ETX>
+```
+
+
+---
+
+## 📡 Telemetry (STM32 → Pi)
+
+| Type | Description |
 |------|-------------|
-| PING | Health check |
-| STATUS | System status |
+| HB   | Heartbeat   |
+| ARR  | Arrival update |
+| DL   | Delay event |
 
-### Responses
-| Response | Meaning |
-|--------|--------|
-| PONG | Device alive |
-| STATUS|OK | System healthy |
+---
 
+## 🎮 Commands (Pi → STM32)
 
-## 7. STM32 Firmware Design
-The firmware uses HAL_UART_Receive_IT for interrupt-driven reception. Incoming bytes are buffered, parsed, and responded to without blocking the main loop.
+| Command | Response |
+|---------|----------|
+| PING | ACK PONG |
+| STATUS | STATUS (node info) |
+| SETROUTE=12A | ACK ROUTE_SET |
+| SETETA=7 | ACK ETA_SET |
 
+---
 
-## 8. Raspberry Pi Configuration
-UART was enabled via config.txt, the serial console was disabled, and communication was validated using Python scripts on /dev/serial0.
+## 🛠 Hardware Setup
 
+### Boards
+- STM32 Nucleo-144 (STM32F767)
+- Raspberry Pi 5
 
-## 9. Testing & Validation
-The system was tested incrementally, culminating in full bidirectional command-response validation between the STM32 and Raspberry Pi.
+### Wiring (USART3)
 
-![Demonstration](docs/outputpic.png)
+| STM32 | Function | Raspberry Pi |
+|--------|----------|--------------|
+| PB10 | TX | GPIO15 (RX) |
+| PB11 | RX | GPIO14 (TX) |
+| GND  | GND | GND |
 
-## 10. Repository Structure
+UART Configuration:
+- 115200 baud
+- 8 data bits
+- No parity
+- 1 stop bit
+
+---
+
+## 🚀 Running the Host (Raspberry Pi)
+
+```bash
+cd raspberry_pi
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 host.py
 ```
-/docs      -> wiring, architecture, screenshots
-/stm32        -> Core STM32 firmware code
-/raspberry-pi      -> Python code
-/README.md   -> Project documentation
-/LICENSE     -> License file (stay intact)
+
+```c
+Interactive commands:
+1 → PING
+2 → STATUS
+3 → SETROUTE=12A
+4 → SETETA=7
+q → quit
+```
+
+## Repository Structure
+```md
+stm32-rpi-uart-bridge/
+├── docs/
+├── protocol/
+├── raspberry_pi/
+└── stm32_firmware/
 ```
 
 
-## 11. Features (TL;DR)
-- Interrupt-driven UART on STM32
-- Framed command protocol
-- Bidirectional messaging
-- Linux-side UART handling on Raspberry Pi 5
-- Reproducible setup and documentation
+## Current Release
+```
+v0.2.0 – Structured UART Transport Protocol
+Includes:
+Framing
+Checksum validation
+Telemetry engine
+Command-response handling
+Interactive host with auto-reconnect
+```
 
 
-## 12. Future Enhancements
-- CRC-based message validation
-- DMA-driven UART
-- Integration with larger embedded systems
+## Roadmap
 
-
-## 13. Professional Relevance
-This project demonstrates embedded firmware architecture, serial protocol design, and cross-platform hardware integration suitable for professional and Global Talent portfolios.
+**Planned improvements:**
+ACK retry + timeout handling
+Sequence numbers (duplicate prevention)
+Logging + replayable tests
+Transport simulation engine
+Display integration (large touchscreen)
