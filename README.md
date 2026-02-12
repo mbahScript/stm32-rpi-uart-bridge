@@ -139,6 +139,8 @@ Interactive commands:
 q → quit
 ```
 
+![System Result](docs/bash.png)
+
 ## Repository Structure
 ```md
 stm32-rpi-uart-bridge/
