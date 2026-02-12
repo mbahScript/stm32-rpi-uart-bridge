@@ -22,11 +22,11 @@ This project implements a **structured, bidirectional UART transport protocol** 
 
 It goes beyond basic UART by implementing:
 
-- ✅ STX/ETX framed packets  
-- ✅ XOR checksum validation  
-- ✅ Typed messages (HB / ARR / DL / CMD / ACK / STATUS / ERR)  
-- ✅ Bidirectional command-response handling  
-- ✅ Interactive host controller with auto-reconnect  
+-  STX/ETX framed packets  
+-  XOR checksum validation  
+-  Typed messages (HB / ARR / DL / CMD / ACK / STATUS / ERR)  
+-  Bidirectional command-response handling  
+-  Interactive host controller with auto-reconnect  
 
 This repository serves as the **communication foundation** for a future smart transport (TfL-style) simulation system.
 
@@ -47,7 +47,7 @@ This project demonstrates those principles using real hardware.
 
 ---
 
-## 🔄 Protocol Format
+##  Protocol Format
 
 All packets follow:
 
@@ -74,7 +74,7 @@ Where:
 
 ---
 
-## 📡 Telemetry (STM32 → Pi)
+##  Telemetry (STM32 → Pi)
 
 | Type | Description |
 |------|-------------|
@@ -84,7 +84,7 @@ Where:
 
 ---
 
-## 🎮 Commands (Pi → STM32)
+##  Commands (Pi → STM32)
 
 | Command | Response |
 |---------|----------|
@@ -95,7 +95,7 @@ Where:
 
 ---
 
-## 🛠 Hardware Setup
+##  Hardware Setup
 
 ### Boards
 - STM32 Nucleo-144 (STM32F767)
@@ -117,7 +117,7 @@ UART Configuration:
 
 ---
 
-## 🚀 Running the Host (Raspberry Pi)
+##  Running the Host (Raspberry Pi)
 
 ```bash
 cd raspberry_pi
