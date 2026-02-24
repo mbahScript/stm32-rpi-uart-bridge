@@ -13,85 +13,10 @@
 
 ---
 
-<<<<<<< HEAD
-## STM32 ↔ Raspberry Pi UART Transport Protocol v0.3.0
-=======
-##  STM32 ↔ Raspberry Pi UART Transport Protocol v0.3.1
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
+## Overview
 
 A lightweight, checksum-validated UART transport protocol between an **STM32F767 (Nucleo-144)** and a **Raspberry Pi 5**.
 
-<<<<<<< HEAD
-- STM32F767ZI (Nucleo-144)
-- Raspberry Pi 5
-
----
-
-## What’s New!
-
-### Sequence Numbers (SEQ)
-- Every frame now includes a sequence number.
-- Enables deterministic command-response matching.
-
-### Host Retry Mechanism
-- Raspberry Pi host retries up to 3 times if no matching response is received.
-- Ensures reliable command execution.
-
-### Duplicate Protection
-- STM32 ignores duplicate commands based on SEQ.
-- Prevents repeated command execution.
-
-### Telemetry Streaming
-STM32 periodically sends:
-- `HB` – Heartbeat
-- `ARR` – Arrival updates
-- `DL` – Delay events
-
----
-
-
-## Protocol Version
-
-**v2 Format**
-
-```
-<STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-```
-
-Where:
-
-- `STX = 0x02`
-- `ETX = 0x03`
-- `CHK = XOR checksum over ASCII bytes of TYPE|NODE|SEQ|DATA`
----
-
-## Example Frame
-```
-\x02ACK|BUS01|0|PONG|56\x03
-```
-
----
-
-## Project Structure
-```md
-stm32-rpi-uart-bridge/
-├── docs/
-├── raspberry-pi/
-└── stm32_firmware/
-```
----
-
-## Hardware
-
-- STM32F767ZI Nucleo-144
-- Raspberry Pi 5 (`/dev/serial0`)
-- USART3 (PB10 TX, PB11 RX)
-- 115200 8N1
-
----
-
-##  Running the Host (Raspberry Pi)
-=======
 This repo implements a simple framed protocol over UART with:
 - **STX/ETX framing**
 - **XOR checksum**
@@ -119,10 +44,9 @@ This project provides a clean baseline transport layer you can reuse for larger 
 ## Protocol (v2)
 
 Frame format:
-
-
+```
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-
+```
 
 - `STX` = `0x02`
 - `ETX` = `0x03`
@@ -130,10 +54,10 @@ Frame format:
 - `SEQ` (0–255) is used to match responses to commands
 
 ### Example
-
+```
 CMD|HOST|7|PING|5A
 ACK|BUS01|7|PONG|56
-
+```
 
 ---
 
@@ -171,60 +95,41 @@ ACK|BUS01|7|PONG|56
 
 From `raspberry-pi/`:
 
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python3 host.py
+```
+### Output 
+![System Result](docs/output.png)
 
 If you see “device busy”, close other programs using /dev/serial0 (screen/minicom/another script).
 
-<<<<<<< HEAD
-![System Result](docs/output.png)
-=======
-Logs (v0.3.1)
+### Logs (v0.3.1)
 
 Each run creates a new session log:
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
-
+```
 raspberry-pi/logs/session_YYYYMMDD_HHMMSS.log
-
-<<<<<<< HEAD
-## Current Version (Status)
-=======
+```
 Entries include:
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
-
+```
 TX ...
-
 RX ...
-
-<<<<<<< HEAD
-This version establishes a reliable, versioned transport layer and forms the foundation for:
-=======
 RX_INVALID ...
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
-
 INFO ...
+```
 
-Repository Layout
+## Repository Layout:
+```
 docs/                # protocol notes, wiring, troubleshooting, changelog
 raspberry-pi/         # host CLI + logging
-stm32_firmware/                # STM32CubeIDE project / firmware code
-Changelog
-
-<<<<<<< HEAD
-## Roadmap
-
-See `ROADMAP.md`
-
-Next milestone: `v0.3.1 – Reliability polish + logging`
-=======
-See `docs/CHANGELOG.md`
+stm32/                # STM32CubeIDE project / firmware code
+```
 
 ## Roadmap
 - v0.4.x: multi-node addressing + message routing
 - v0.5.x: API integration (TFL-style live data) + UI renderer on Pi
 - v1.0.0: production-style bridge service (systemd) + dashboard integration
->>>>>>> 6120cbf (v0.3.1: duplicate reply resend + structured session logging + changelog update)
+
+
