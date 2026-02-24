@@ -1,10 +1,9 @@
 # UART Transport Protocol v2
 
 ## Frame Structure
-
-
+```
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-
+```
 
 ### Fields
 
@@ -19,19 +18,17 @@
 ---
 
 ## Checksum
-
-
+```
 CHK = XOR(TYPE|NODE|SEQ|DATA)
-
+```
 
 Example:
-
-
+```
 ACK|BUS01|0|PONG
-
-
+```
+```
 XOR of ASCII bytes → 0x56
-
+```
 ---
 
 ## Message Types
