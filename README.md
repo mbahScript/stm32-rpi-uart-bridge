@@ -54,11 +54,10 @@ STM32 periodically sends:
 ```
 
 Where:
-```
+
 - `STX = 0x02`
 - `ETX = 0x03`
 - `CHK = XOR checksum over ASCII bytes of TYPE|NODE|SEQ|DATA`
-```
 ---
 
 ## Example Frame
@@ -69,11 +68,11 @@ Where:
 ---
 
 ## Project Structure
-```
+```md
 stm32-rpi-uart-bridge/
 ├── docs/
 ├── raspberry-pi/
-└── stm32/
+└── stm32_firmware/
 ```
 ---
 
