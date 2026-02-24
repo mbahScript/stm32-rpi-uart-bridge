@@ -13,7 +13,7 @@
 - Duplicate protection
 - Telemetry streaming
 
-## v0.3.1 (Planned)
+## v0.3.1
 - Duplicate reply resend
 - File logging on host
 
