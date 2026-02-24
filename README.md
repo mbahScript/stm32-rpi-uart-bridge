@@ -17,7 +17,95 @@
 
 This release introduces a structured and reliable transport layer over UART between:
 
+<<<<<<< HEAD
+- **STM32F767 (Nucleo-144)** – Real-time embedded node
+- **Raspberry Pi 5** – Host controller
+
+It goes beyond basic UART by implementing:
+
+-  STX/ETX framed packets  
+-  XOR checksum validation  
+-  Typed messages (HB / ARR / DL / CMD / ACK / STATUS / ERR)  
+-  Bidirectional command-response handling  
+-  Interactive host controller with auto-reconnect  
+
+This repository serves as the **communication foundation** for a future smart transport (TfL-style) simulation system.
+
+---
+
+##  Why This Project Matters
+
+In real embedded systems, UART communication must handle:
+
+- Framing & partial data
+- Corruption detection
+- Message typing
+- State updates
+- Host–node coordination
+- Fault tolerance
+
+This project demonstrates those principles using real hardware.
+
+---
+
+##  Protocol Format
+
+All packets follow:
+
+```md
+<STX>TYPE|NODE|DATA|CHK<ETX>
+```
+
+
+Where:
+
+- **STX** = `0x02`
+- **ETX** = `0x03`
+- **CHK** = XOR of ASCII bytes of `TYPE|NODE|DATA`
+
+### Example
+
+
+```md
+<STX>HB|BUS01|OK|4B<ETX>
+<STX>CMD|HOST|PING|5A<ETX>
+<STX>ACK|BUS01|PONG|1A<ETX>
+```
+
+
+---
+
+##  Telemetry (STM32 → Pi)
+
+| Type | Description |
+|------|-------------|
+| HB   | Heartbeat   |
+| ARR  | Arrival update |
+| DL   | Delay event |
+
+
+##  Commands (Pi → STM32)
+
+| Command | Response |
+|---------|----------|
+| PING | ACK PONG |
+| STATUS | STATUS (node info) |
+| SETROUTE=12A | ACK ROUTE_SET |
+| SETETA=7 | ACK ETA_SET |
+
+
+## Architecture Diagram
+![System Diagram](docs/architecture_diagram.png)
+
+---
+
+##  Hardware Setup
+
+### Boards
+- STM32 Nucleo-144 (STM32F767)
+=======
 - STM32F767ZI (Nucleo-144)
+>>>>>>> efa4d4a (v0.3.0 - Protocol v2 (SEQ + retries) with structured transport layer)
 - Raspberry Pi 5
 
 ---
@@ -44,6 +132,10 @@ STM32 periodically sends:
 
 ---
 
+<<<<<<< HEAD
+##  Running the Host (Raspberry Pi)
+*NB: [host.py] is paser.py and send_command.py combined.*
+=======
 
 ## 📦 Protocol Version
 
@@ -87,6 +179,7 @@ stm32-rpi-uart-bridge/
 ---
 
 ##  Running the Host (Raspberry Pi)
+>>>>>>> efa4d4a (v0.3.0 - Protocol v2 (SEQ + retries) with structured transport layer)
 ```bash
 cd raspberry_pi
 python3 -m venv .venv
@@ -104,7 +197,20 @@ Interactive commands:
 q → quit
 ```
 
+<<<<<<< HEAD
+![System Result](docs/bash.png)
+
+## Repository Structure
+```md
+stm32-rpi-uart-bridge/
+├── docs/
+├── protocol/
+├── raspberry_pi/
+└── stm32_firmware/
+```
+=======
 ![System Result](docs/output.png)
+>>>>>>> efa4d4a (v0.3.0 - Protocol v2 (SEQ + retries) with structured transport layer)
 
 ---
 
@@ -117,6 +223,14 @@ q → quit
 - Telemetry streaming
 - Command echo replies
 
+<<<<<<< HEAD
+**Planned improvements:**
+ACK retry + timeout handling
+Sequence numbers (duplicate prevention)
+Logging + replayable tests
+Transport simulation engine
+Display integration (large touchscreen)
+=======
 This version establishes a reliable, versioned transport layer and forms the foundation for:
 
 - Backend service integration
@@ -131,3 +245,4 @@ This version establishes a reliable, versioned transport layer and forms the fou
 See `ROADMAP.md`
 
 Next milestone: `v0.3.1 – Reliability polish + logging`
+>>>>>>> efa4d4a (v0.3.0 - Protocol v2 (SEQ + retries) with structured transport layer)
