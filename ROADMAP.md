@@ -24,7 +24,7 @@
 ## v0.5.0 (Planned)
 - 16" Touchscreen Dashboard UI
 
-## v1.0.0
+## v1.0.0 (Planned)
 - Deployment mode
 - Auto-start services
 - Embedded status LCD
