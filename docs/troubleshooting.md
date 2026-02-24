@@ -3,28 +3,24 @@
 ## ModuleNotFoundError: serial
 
 Install pyserial:
-
-
+```py
 python3 -m pip install pyserial
-
+```
 
 ---
 
 ## Device busy
 
 Check:
-
-
+```
 lsof /dev/serial0
-
-
+```
 Stop conflicting processes.
 
 ---
 
 ## INVALID FORMAT errors
-
-Ensure host.py matches protocol v2 (SEQ included).
+Ensure `host.py` matches protocol v2 (SEQ included).
 
 ---
 
