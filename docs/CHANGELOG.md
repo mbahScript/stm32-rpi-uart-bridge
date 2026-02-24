@@ -3,8 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 This project follows Semantic Versioning:
-
-MAJOR.MINOR.PATCH  
+```
+MAJOR.MINOR.PATCH
+``` 
 - MAJOR → incompatible protocol changes  
 - MINOR → new features, backward compatible  
 - PATCH → fixes and stability improvements  
@@ -28,13 +29,13 @@ MAJOR.MINOR.PATCH
 
 ### Technical Details
 - Protocol v2 frame format:
-
+```c
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-
+```
 - Checksum: XOR over ASCII bytes of:
-
+```c
 TYPE|NODE|SEQ|DATA
-
+```
 - Duplicate HOST sequence numbers now trigger re-transmission of the last stored reply.
 
 ---
@@ -52,13 +53,13 @@ TYPE|NODE|SEQ|DATA
 
 ### Changed
 - Frame structure updated from:
-
+```c
 TYPE|NODE|DATA|CHK
-
+```
 to:
-
+```c
 TYPE|NODE|SEQ|DATA|CHK
-
+```
 
 ---
 
