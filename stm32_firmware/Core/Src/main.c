@@ -2,7 +2,14 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : STM32F767 ↔ RPi5 UART Transport Protocol (USART3)
+  * @brief          : STM32F767 ↔ RPi5 UART Transport Protocol v0.3.0 (USART3)
+  ******************************************************************************
+  * Protocol v2: <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
+  * - STX = 0x02, ETX = 0x03
+  * - CHK = XOR over ASCII bytes of "TYPE|NODE|SEQ|DATA"
+  *
+  * Telemetry frames use auto-incrementing SEQ.
+  * Replies to HOST commands echo the HOST SEQ so the Pi can match responses.
   ******************************************************************************
   * @attention
   *
@@ -65,7 +72,7 @@ static void MX_USART3_UART_Init(void);
 #define ETX 0x03
 
 #define RX_BUFFER_SIZE 192
-#define TX_BUFFER_SIZE 256
+//#define TX_BUFFER_SIZE 256
 
 /* ========= Node Identity ========= */
 static char NODE_ID[16] = "BUS01";
@@ -78,14 +85,28 @@ static char rx_buffer[RX_BUFFER_SIZE];
 static uint16_t rx_index = 0;
 static uint8_t receiving = 0;
 
+/* ========= UART TX Sequence ========= */
+static uint8_t tx_seq = 0;
+
+/* ========= Duplicate Detection (HOST CMDs) ========= */
+static uint8_t last_host_seq = 255;
+
 /* ========= Timing ========= */
 static uint32_t last_hb_ms = 0;
 static uint32_t last_arr_ms = 0;
 static uint32_t last_dl_ms = 0;
 
+/* Forward declarations */
+static uint8_t checksum_xor(const char *data);
+static void send_packet_auto(const char *type, const char *node, const char *data);
+static void send_packet_reply(const char *type, const char *node, uint8_t seq, const char *data);
+static void handle_complete_message(const char *msg);
+
 /**
- * @brief XOR checksum of ASCII payload (bytes between STX and before checksum field)
+ * @brief XOR checksum over ASCII payload bytes.
+ * @param data Null-terminated payload string.
  */
+
 static uint8_t checksum_xor(const char *data)
 {
     uint8_t chk = 0;
@@ -98,112 +119,136 @@ static uint8_t checksum_xor(const char *data)
 }
 
 /**
- * @brief Build and send framed packet: <STX>TYPE|NODE|DATA|CHK<ETX>
- * @param type 3-6 chars suggested (e.g., "HB", "ARR", "DL", "ACK", "STATUS", "ERR", "CMD")
- * @param node node identifier (e.g., "BUS01")
- * @param data payload text (no ETX/STX), can be empty string ""
+ * @brief Send a framed packet with auto-incrementing SEQ.
+ *        Used for telemetry (HB/ARR/DL) and general messages not tied to a host command.
  */
 
-// NOTE: TX_BUFFER_SIZE should comfortably fit: STX + TYPE|NODE|DATA|CHK + ETX
-// Increase if you add longer DATA payloads later (e.g., multi-stop updates).
-
-static void send_packet(const char *type, const char *node, const char *data)
+static void send_packet_auto(const char *type, const char *node, const char *data)
 {
-    char payload[TX_BUFFER_SIZE];
-    char frame[TX_BUFFER_SIZE];
+    char payload[128];
+    char frame[160];
 
-    int n = snprintf(payload, sizeof(payload), "%s|%s|%s", type, node, data);
-    if (n < 0 || n >= (int)sizeof(payload)) {
-        // Payload too long
-        const char err[] = {STX,'E','R','R','|','B','U','S','0','1','|','T','X','_','T','O','O','_','L','O','N','G','|','0','0',ETX};
-        HAL_UART_Transmit(&huart3, (uint8_t*)err, sizeof(err), HAL_MAX_DELAY);
-        return;
-    }
+    uint8_t seq = tx_seq++;  // Global sequence for every TX frame (telemetry etc.)
+
+    // Build: TYPE|NODE|SEQ|DATA
+    int n = snprintf(payload, sizeof(payload), "%s|%s|%u|%s", type, node, seq, data);
+    if (n < 0 || n >= (int)sizeof(payload)) return;
 
     uint8_t chk = checksum_xor(payload);
 
+    // Build: <STX>payload|CHK<ETX>
     n = snprintf(frame, sizeof(frame), "%c%s|%02X%c", STX, payload, chk, ETX);
-    if (n < 0 || n >= (int)sizeof(frame)) {
-        // Frame too long
-        const char err[] = {STX,'E','R','R','|','B','U','S','0','1','|','F','R','M','_','T','O','O','_','L','O','N','G','|','0','0',ETX};
-        HAL_UART_Transmit(&huart3, (uint8_t*)err, sizeof(err), HAL_MAX_DELAY);
-        return;
-    }
+    if (n < 0 || n >= (int)sizeof(frame)) return;
 
     HAL_UART_Transmit(&huart3, (uint8_t*)frame, (uint16_t)strlen(frame), HAL_MAX_DELAY);
 }
 
 /**
- * @brief Parse command payload and respond
- * Expected CMD packet payload format: CMD|HOST|<command>
- * Here we treat incoming rx_buffer content as: TYPE|NODE|DATA|CHK  (without STX/ETX)
+ * @brief Send a framed reply that echoes HOST SEQ.
+ *        This is REQUIRED for host ACK/STATUS matching and retry logic.
  */
+static void send_packet_reply(const char *type, const char *node, uint8_t seq, const char *data)
+{
+    char payload[128];
+    char frame[160];
+
+    int n = snprintf(payload, sizeof(payload), "%s|%s|%u|%s", type, node, seq, data);
+    if (n < 0 || n >= (int)sizeof(payload)) return;
+
+    uint8_t chk = checksum_xor(payload);
+
+    n = snprintf(frame, sizeof(frame), "%c%s|%02X%c", STX, payload, chk, ETX);
+    if (n < 0 || n >= (int)sizeof(frame)) return;
+
+    HAL_UART_Transmit(&huart3, (uint8_t*)frame, (uint16_t)strlen(frame), HAL_MAX_DELAY);
+}
+
+/**
+ * @brief Parse a complete message (without STX/ETX), validate checksum, and handle commands.
+ * Expected message string format (without STX/ETX):
+ *   TYPE|NODE|SEQ|DATA|CHK
+ *
+ * DATA may contain extra '|' characters, so we split checksum from the end, then parse the first fields.
+ */
+
 static void handle_complete_message(const char *msg)
 {
     char copy[RX_BUFFER_SIZE];
-    strncpy(copy, msg, sizeof(copy)-1);
-    copy[sizeof(copy)-1] = '\0';
+    strncpy(copy, msg, sizeof(copy) - 1);
+    copy[sizeof(copy) - 1] = '\0';
 
-    // 1) Find LAST '|' which separates checksum from the rest
+    // Split checksum from the end: "...|CHK"
     char *last_bar = strrchr(copy, '|');
     if (!last_bar) {
-        send_packet("ERR", NODE_ID, "FORMAT");
+        send_packet_auto("ERR", NODE_ID, "FORMAT");
         return;
     }
 
-    // last_bar points to '|' before checksum
     char *chk_str = last_bar + 1;
-    *last_bar = '\0';  // Now copy becomes: "TYPE|NODE|DATA"
+    *last_bar = '\0'; // now copy = "TYPE|NODE|SEQ|DATA"
 
-    // 2) Validate checksum using the remaining string (TYPE|NODE|DATA)
     uint8_t calc_chk = checksum_xor(copy);
     uint8_t recv_chk = (uint8_t)strtoul(chk_str, NULL, 16);
 
     if (calc_chk != recv_chk) {
-        send_packet("ERR", NODE_ID, "CHK");
+        send_packet_auto("ERR", NODE_ID, "CHK");
         return;
     }
 
-    // 3) Extract TYPE
-    char *type = strtok(copy, "|");
-    char *node = strtok(NULL, "|");
+    // Parse first fields: TYPE|NODE|SEQ|DATA(rest)
+    char *type    = strtok(copy, "|");
+    char *node    = strtok(NULL, "|");
+    char *seq_str = strtok(NULL, "|");
+    char *data    = strtok(NULL, ""); // remainder as DATA
 
-    // 4) DATA is whatever remains after TYPE and NODE
-    char *data = strtok(NULL, "");  // rest of string
-    if (!type || !node || !data) {
-        send_packet("ERR", NODE_ID, "FORMAT");
+    if (!type || !node || !seq_str || !data) {
+        send_packet_auto("ERR", NODE_ID, "FORMAT");
         return;
     }
 
-    // Handle CMD
+    uint8_t host_seq = (uint8_t)atoi(seq_str);
+
+    // Duplicate detection for HOST commands (simple last-seq)
+    if (strcmp(type, "CMD") == 0) {
+        if (host_seq == last_host_seq) {
+            // Optional improvement: re-send last reply.
+            // For now, ignore duplicates safely.
+            return;
+        }
+        last_host_seq = host_seq;
+    }
+
+    // Only accept commands from host
     if (strcmp(type, "CMD") == 0)
     {
+        (void)node; // node is "HOST" typically; not required for this demo
+
         if (strcmp(data, "PING") == 0) {
-            send_packet("ACK", NODE_ID, "PONG");
+            send_packet_reply("ACK", NODE_ID, host_seq, "PONG");
         }
         else if (strcmp(data, "STATUS") == 0) {
-            char info[80];
+            char info[96];
             snprintf(info, sizeof(info), "NODE=%s,ROUTE=%s,ETA=%d", NODE_ID, ROUTE_ID, CURRENT_ETA);
-            send_packet("STATUS", NODE_ID, info);
+            send_packet_reply("STATUS", NODE_ID, host_seq, info);
         }
         else if (strncmp(data, "SETROUTE=", 9) == 0) {
-            strncpy(ROUTE_ID, data + 9, sizeof(ROUTE_ID)-1);
-            ROUTE_ID[sizeof(ROUTE_ID)-1] = '\0';
-            send_packet("ACK", NODE_ID, "ROUTE_SET");
+            strncpy(ROUTE_ID, data + 9, sizeof(ROUTE_ID) - 1);
+            ROUTE_ID[sizeof(ROUTE_ID) - 1] = '\0';
+            send_packet_reply("ACK", NODE_ID, host_seq, "ROUTE_SET");
         }
         else if (strncmp(data, "SETETA=", 7) == 0) {
             CURRENT_ETA = atoi(data + 7);
-            send_packet("ACK", NODE_ID, "ETA_SET");
+            send_packet_reply("ACK", NODE_ID, host_seq, "ETA_SET");
         }
         else {
-            send_packet("ERR", NODE_ID, "UNKNOWN_CMD");
+            send_packet_reply("ERR", NODE_ID, host_seq, "UNKNOWN_CMD");
         }
     }
     else {
-        send_packet("ERR", NODE_ID, "UNKNOWN_TYPE");
+        // Ignore unknown types quietly OR respond with error (your choice)
+        // send_packet_auto("ERR", NODE_ID, "UNKNOWN_TYPE");
     }
 }
-
 
 /* USER CODE END 0 */
 
@@ -254,31 +299,31 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	    /* USER CODE BEGIN 3 */
-	    uint32_t t = HAL_GetTick();
+      uint32_t t = HAL_GetTick();
 
-	    /* Heartbeat every 5 seconds */
-	    if ((t - last_hb_ms) >= 5000)
-	    {
-	        last_hb_ms = t;
-	        send_packet("HB", NODE_ID, "OK");
-	    }
+      /* Heartbeat every 5 seconds */
+      if ((t - last_hb_ms) >= 5000)
+      {
+          last_hb_ms = t;
+          send_packet_auto("HB", NODE_ID, "OK");
+      }
 
-	    /* Arrival update every 10 seconds */
-	    if ((t - last_arr_ms) >= 10000)
-	    {
-	        last_arr_ms = t;
+      /* Arrival update every 10 seconds */
+      if ((t - last_arr_ms) >= 10000)
+      {
+          last_arr_ms = t;
 
-	        char data[80];
-	        snprintf(data, sizeof(data), "ROUTE=%s,STOP=STOP12,ETA=%d", ROUTE_ID, CURRENT_ETA);
-	        send_packet("ARR", NODE_ID, data);
-	    }
+          char data[96];
+          snprintf(data, sizeof(data), "ROUTE=%s,STOP=STOP12,ETA=%d", ROUTE_ID, CURRENT_ETA);
+          send_packet_auto("ARR", NODE_ID, data);
+      }
 
-	    /* Delay event (demo) every 30 seconds */
-	    if ((t - last_dl_ms) >= 30000)
-	    {
-	        last_dl_ms = t;
-	        send_packet("DL", NODE_ID, "+5MIN");
-	    }
+      /* Delay event every 30 seconds */
+      if ((t - last_dl_ms) >= 30000)
+      {
+          last_dl_ms = t;
+          send_packet_auto("DL", NODE_ID, "+5MIN");
+      }
 
 	    /* Main loop stays free; RX handled in interrupt callback */
 
@@ -377,8 +422,8 @@ static void MX_USART3_UART_Init(void)
 
 /**
   * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
+  * PB10 -> USART3_TX (AF7)
+  * PB11 -> USART3_RX (AF7)
   */
 static void MX_GPIO_Init(void)
 {
@@ -412,9 +457,8 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 /**
- * @brief UART RX complete callback (interrupt-driven)
- * This assembles framed messages between STX and ETX into rx_buffer.
- * On ETX, it calls handle_complete_message(rx_buffer)
+ * @brief UART RX complete callback (interrupt-driven).
+ * Builds messages framed by STX/ETX into rx_buffer, then calls handle_complete_message().
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -430,7 +474,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             rx_buffer[rx_index] = '\0';
             receiving = 0;
 
-            /* rx_buffer contains: TYPE|NODE|DATA|CHK */
             handle_complete_message(rx_buffer);
 
             rx_index = 0;
@@ -443,14 +486,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             }
             else
             {
-                /* Overflow: reset state safely */
                 receiving = 0;
                 rx_index = 0;
-                send_packet("ERR", NODE_ID, "RX_OVERFLOW");
+                send_packet_auto("ERR", NODE_ID, "RX_OVERFLOW");
             }
         }
 
-        /* Re-arm RX interrupt for next byte */
+        /* Re-arm RX interrupt */
         HAL_UART_Receive_IT(&huart3, &rx_byte, 1);
     }
 }
