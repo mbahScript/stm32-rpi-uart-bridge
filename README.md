@@ -12,21 +12,20 @@
 ![Protocol](https://img.shields.io/badge/Protocol-UART-000000?style=for-the-badge)
 
 ---
-# STM32 ↔ Raspberry Pi UART Bridge  
 ## v0.4.0 – Real TfL Data Integration
 
 # Project Overview
 
 This project implements a custom reliable UART transport protocol between:
 
-🧠 STM32F767 (Bare-Metal, HAL-based)
+- STM32F767 (Bare-Metal, HAL-based)
 
-🐧 Raspberry Pi 5 (Python, Linux-based)
+- Raspberry Pi 5 (Python, Linux-based)
 
 Starting from framed communication and reliability features, the system has now evolved into a real-time embedded transport node that integrates live Transport for London (TfL) Unified API data.
 
+## System Architecture
 ```md
-🏗 System Architecture
             ┌────────────────────────────┐
             │        TfL Unified API     │
             └──────────────┬─────────────┘
@@ -49,11 +48,13 @@ Starting from framed communication and reliability features, the system has now 
             └────────────────────────────┘
 ```
 
-🔌 Custom UART Protocol (v2)
+ ## Custom UART Protocol (v2)
 
-Frame format:
-
+### Frame format:
+```md
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
+```
+```md
 Field	Description
 STX	0x02
 ETX	0x03
@@ -62,58 +63,55 @@ NODE	HOST / BUS01
 SEQ	Sequence number (0–255)
 DATA	Payload
 CHK	XOR over ASCII bytes of `TYPE
-🔁 Reliability Features
+```
 
+## Reliability Features
+```md
 ✔ SEQ-based request/response matching
-
 ✔ Duplicate detection on STM32
-
 ✔ Last reply frame storage + resend
-
 ✔ XOR checksum validation
-
 ✔ RX overflow protection
-
 ✔ Host-side retry logic
+```
 
-🌍 v0.4.0 — Real TfL API Integration
+## v0.4.0 — Real TfL API Integration
 
 This version upgrades the system from mock telemetry to live real-world data.
 
-Added Features
-
+### Added Features
+```md
 🔹 TfL Unified API integration
-
 🔹 Compact summary formatting on Pi
-
 🔹 TFL=<summary> command transmission
-
 🔹 On-device storage of latest TfL summary
-
 🔹 GETTFL command for retrieval
+```
 
-Example Flow
+### Example Flow
+- Pi fetches live tube status.
 
-Pi fetches live tube status.
-
-Pi sends:
-
+- Pi sends:
+```md
 CMD|HOST|226|TFL=TUBE: Bakerloo=Good Service; ...|CHK
+```
+- STM32 stores summary.
 
-STM32 stores summary.
-
-STM32 replies:
-
+- STM32 replies:
+```md
 ACK|BUS01|226|TFL_RX|CHK
-
-Host requests stored data:
-
+```                       
+- Host requests stored data:
+```md
 CMD|HOST|164|GETTFL|CHK
-
-STM32 responds:
-
+```
+- STM32 responds:
+```md
 STATUS|BUS01|164|TFL=TUBE: Bakerloo=Good Service; ...|CHK
-📂 Repository Structure
+```
+
+## Repository Structure
+```md
 stm32-rpi-uart-bridge/
 │
 ├── docs/
@@ -134,27 +132,37 @@ stm32-rpi-uart-bridge/
 │
 └── stm32/
     └── Core/Src/main.c
-⚙️ Raspberry Pi Setup
-1️⃣ Create virtual environment
+```
+
+### Raspberry Pi Setup
+1️. Create virtual environment
+```md
 python3 -m venv .venv
 source .venv/bin/activate
-2️⃣ Install dependencies
+```
+2️. Install dependencies
+```md
 pip install -r raspberry-pi/requirements.txt
-3️⃣ Configure .env
-
+```
+3️. Configure .env
 Create:
-
+```md
 raspberry-pi/.env
-
+```
 Example:
-
+```md
 TFL_APP_KEY=YOUR_TFL_APP_KEY
 UART_PORT=/dev/serial0
 UART_BAUD=115200
 POLL_INTERVAL=30
-4️⃣ Run host
+```
+4. Run host
+```md
 python3 host.py
-🖥 Command Menu
+```
+
+### Command Menu
+```
 Option	Description
 1	PING
 2	STATUS
@@ -163,28 +171,17 @@ Option	Description
 5	TFL_TUBE (fetch + send)
 6	TFL_ARR (StopPoint arrivals)
 7	GETTFL (read stored summary)
-🔐 Security Considerations
+```
 
-API key loaded via environment variables
+## Security Considerations
+- API key loaded via environment variables
+- .env excluded from version control
+- No plaintext credentials committed
+- Checksum validation prevents corrupted frames
 
-.env excluded from version control
-
-No plaintext credentials committed
-
-Checksum validation prevents corrupted frames
-
-🛣 Roadmap
+## Roadmap
 v0.5.0 (Planned)
-
-systemd auto-start service
-
-Background TfL polling daemon
-
-Improved TX (non-blocking interrupt/DMA)
-
-Display integration (LCD/OLED)
-
-👤 Author
-
-Samson (0xSamson)
-Electrical & Electronics Engineer | Embedded Systems | Cybersecurity
+- systemd auto-start service
+- Background TfL polling daemon
+- Improved TX (non-blocking interrupt/DMA)
+- Display integration (LCD/OLED)
