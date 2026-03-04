@@ -1,0 +1,19 @@
+# Python
+raspberry-pi/.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+raspberry-pi/.env
+raspberry-pi/env
+
+# Logs (keep folder via .gitkeep)
+raspberry-pi/logs/*
+!raspberry-pi/logs/.gitkeep
+
+# STM32 build outputs (optional)
+stm32/**/Debug/
+stm32/**/Release/
+*.elf
+*.map
+*.list

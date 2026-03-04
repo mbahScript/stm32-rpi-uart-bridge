@@ -1,0 +1,13 @@
+# TfL Unified API key (recommended)
+TFL_APP_KEY=e4b18057b4904dab9194ebad08df1a35
+
+# Optional: a StopPoint ID for arrivals experiments
+# NOTE: /StopPoint/{id}/Arrivals works for INDIVIDUAL stops (not groups)
+TFL_STOPPOINT_ID=
+
+# UART settings
+UART_PORT=/dev/serial0
+UART_BAUD=115200
+
+# Polling interval (seconds)
+POLL_INTERVAL=30
