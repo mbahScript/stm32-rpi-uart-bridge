@@ -171,6 +171,9 @@ Option	Description
 6	TFL_ARR (StopPoint arrivals)
 7	GETTFL (read stored summary)
 ```
+### CL outputs
+![Result](docs/images/output.png)
+![Result](docs/images/output1.png)
 
 ## Security Considerations
 - API key loaded via environment variables
