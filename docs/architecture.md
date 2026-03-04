@@ -11,29 +11,28 @@ The system integrates:
 ---
 
 ## High-Level Architecture
-
-
-TfL API (HTTPS)
-↓
-Raspberry Pi 5
-
-API Client
-
-Summary Formatter
-
-UART Transport Layer
-↓ UART (115200)
-STM32F767
-
-Interrupt RX
-
-Framed Parser
-
-SEQ handling
-
-Data storage
-
-
+```
+┌────────────────────────────┐
+│        TfL Unified API     │
+└──────────────┬─────────────┘
+               │ HTTPS
+               ▼
+┌────────────────────────────┐
+│     Raspberry Pi 5         │
+│  - Python transport layer  │
+│  - TfL API integration     │
+│  - Retry logic + logging   │
+└──────────────┬─────────────┘
+               │ UART (115200)
+               ▼
+┌────────────────────────────┐
+│        STM32F767           │
+│  - Interrupt RX framing    │
+│  - SEQ duplicate handling  │
+│  - Checksum validation     │
+│  - TfL summary storage     │
+└────────────────────────────┘
+```
 ---
 
 ## Layered Design
@@ -82,26 +81,3 @@ Data storage
 - Predictable memory usage
 - Framed communication
 - Stateless retry logic
-
-```md
-            ┌────────────────────────────┐
-            │        TfL Unified API     │
-            └──────────────┬─────────────┘
-                           │ HTTPS
-                           ▼
-            ┌────────────────────────────┐
-            │     Raspberry Pi 5         │
-            │  - Python transport layer  │
-            │  - TfL API integration     │
-            │  - Retry logic + logging   │
-            └──────────────┬─────────────┘
-                           │ UART (115200)
-                           ▼
-            ┌────────────────────────────┐
-            │        STM32F767           │
-            │  - Interrupt RX framing    │
-            │  - SEQ duplicate handling  │
-            │  - Checksum validation     │
-            │  - TfL summary storage     │
-            └────────────────────────────┘
-```
