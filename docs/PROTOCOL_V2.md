@@ -17,9 +17,9 @@ The protocol is designed for:
 
 ## Frame Format
 
-
+```md
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-
+```
 
 | Field | Description |
 |--------|------------|
@@ -39,14 +39,15 @@ Checksum is computed as:
 
 
 CHK = XOR of all ASCII bytes in:
+```md
 TYPE|NODE|SEQ|DATA
-
+```
 
 Example:
 
-
+```md
 CMD|HOST|12|PING
-
+```
 
 All characters including separators (`|`) are included.
 
@@ -71,9 +72,9 @@ Examples:
 Acknowledgement from STM32.
 
 Example:
-
+```md
 ACK|BUS01|12|PONG
-
+```
 
 ---
 
@@ -81,9 +82,9 @@ ACK|BUS01|12|PONG
 Structured response from STM32.
 
 Example:
-
+```md
 STATUS|BUS01|164|TFL=TUBE: Bakerloo=Good Service
-
+```
 
 ---
 
