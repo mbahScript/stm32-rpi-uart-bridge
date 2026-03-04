@@ -124,11 +124,10 @@ stm32-rpi-uart-bridge/
 │   ├── requirements.txt
 │   ├── logs/
 │   │   └── .gitkeep
-│   └── src/
-│       ├── host.py
-│       ├── uart_transport.py
-│       ├── tfl_client.py
-│       ├── tfl_poll.py
+│   ├── host.py
+│   ├── uart_transport.py
+│   ├── tfl_client.py
+│   ├── tfl_poll.py
 │
 └── stm32/
     └── Core/Src/main.c
