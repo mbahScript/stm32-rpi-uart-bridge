@@ -31,10 +31,9 @@ dist/
 # Logs
 # ===============================
 
-logs/
-*/logs/*
-!*/logs/.gitkeep
-
+# Logs
+raspberry-pi/logs/*
+!raspberry-pi/logs/.gitkeep
 *.log
 
 # ===============================
