@@ -1,19 +1,77 @@
+# ===============================
 # Python
-raspberry-pi/.venv/
+# ===============================
+
+# Virtual environments
+.venv/
+venv/
+env/
+*/.venv/
+
+# Bytecode
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Secrets
-raspberry-pi/.env
-raspberry-pi/env
+# Python packaging
+build/
+dist/
+*.egg-info/
 
-# Logs (keep folder via .gitkeep)
-raspberry-pi/logs/*
-!raspberry-pi/logs/.gitkeep
+# ===============================
+# Environment / Secrets
+# ===============================
 
-# STM32 build outputs (optional)
-stm32/**/Debug/
-stm32/**/Release/
+.env
+.env.*
+*.env
+
+# ===============================
+# Logs
+# ===============================
+
+logs/
+*/logs/*
+!*/logs/.gitkeep
+
+*.log
+
+# ===============================
+# STM32 / CubeIDE
+# ===============================
+
+# Build folders
+Debug/
+Release/
+*/Debug/
+*/Release/
+
+# Build artifacts
 *.elf
 *.map
 *.list
+*.o
+*.d
+*.su
+
+# CubeIDE settings
+.settings/
+.metadata/
+*.launch
+
+# ===============================
+# OS / Editor junk
+# ===============================
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===============================
+# Misc
+# ===============================
+
+*.bak
+*.tmp

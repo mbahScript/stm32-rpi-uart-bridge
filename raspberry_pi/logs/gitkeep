@@ -1,2 +1,0 @@
-mkdir -p raspberry-pi/logs
-touch raspberry-pi/logs/.gitkeep
