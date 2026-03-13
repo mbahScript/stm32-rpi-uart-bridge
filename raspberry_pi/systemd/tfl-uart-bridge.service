@@ -1,0 +1,14 @@
+[Unit]
+Description=TfL UART Bridge Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/nerd/Desktop/raspberry_pi
+ExecStart=/home/nerd/Desktop/raspberry_pi/.venv/bin/python3 /home/nerd/Desktop/raspberry_pi/service.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
