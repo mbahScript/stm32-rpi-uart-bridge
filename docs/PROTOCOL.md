@@ -10,9 +10,9 @@ The protocol ensures message integrity, sequencing, and compatibility with resou
 
 Each message is transmitted using the following format:
 
-
+```
 <STX>TYPE|NODE|SEQ|DATA|CHK<ETX>
-
+```
 
 | Field | Description |
 |------|-------------|
@@ -31,20 +31,20 @@ Each message is transmitted using the following format:
 Checksum is calculated as:
 
 
-XOR of ASCII bytes of "TYPE|NODE|SEQ|DATA"
+XOR of ASCII bytes of "`TYPE|NODE|SEQ|DATA`"
 
 
 Example payload:
 
-
+```
 HB|BUS01|12|OK
-
+```
 
 Checksum result:
 
-
+```
 CHK = XOR(all bytes)
-
+```
 
 ---
 
@@ -65,9 +65,9 @@ CHK = XOR(all bytes)
 
 ## Example Frame
 
-
+```
 <STX>HB|BUS01|12|OK|05<ETX>
-
+```
 
 ---
 
