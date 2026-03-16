@@ -6,21 +6,21 @@ The project demonstrates a distributed embedded system consisting of a microcont
 
 ## Overview
 
-
+```
 TfL Open Data API
-│
-│ HTTPS
-▼
+        │
+        │ HTTPS
+        ▼
 Raspberry Pi Gateway
 (Python Service)
-│
-│ UART Protocol
-▼
+        │
+        │ UART Protocol
+        ▼
 STM32F767 Microcontroller
-│
-▼
+        │
+        ▼
 Transport Node Simulation
-
+```
 
 ---
 
