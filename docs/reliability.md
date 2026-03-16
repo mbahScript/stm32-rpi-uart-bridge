@@ -12,9 +12,9 @@ The receiver verifies the checksum before processing the message.
 
 If validation fails:
 
-
+```md
 ERR|CHK
-
+```
 
 is returned.
 
@@ -24,9 +24,9 @@ is returned.
 
 Each frame includes a sequence counter:
 
-
+```md
 TYPE|NODE|SEQ|DATA
-
+```
 
 This allows:
 
@@ -48,10 +48,10 @@ This prevents repeated command execution.
 
 The protocol uses explicit start and end markers:
 
-
+```md
 STX = 0x02
 ETX = 0x03
-
+```
 
 This ensures reliable message extraction even when:
 
@@ -70,17 +70,17 @@ The Raspberry Pi gateway runs as a **systemd service**, enabling:
 
 Service management:
 
-
+```bash
 sudo systemctl start tfl-uart-bridge
 sudo systemctl stop tfl-uart-bridge
 sudo systemctl status tfl-uart-bridge
-
+```
 
 Logs can be monitored using:
 
-
+```bash
 journalctl -u tfl-uart-bridge -f
-
+```
 
 ---
 
